@@ -30,7 +30,9 @@ public class RedisConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // 写入类型信息，保证反序列化时能还原具体类型
+        // 允许序列化空对象（如空值缓存标记 NullCacheMarker）
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        // 写入类型信息（缓存对象均为普通类，非 final 类型即可携带 @class）
         mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
         GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer(mapper);

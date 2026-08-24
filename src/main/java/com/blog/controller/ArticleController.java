@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 文章接口
  *
@@ -43,6 +45,14 @@ public class ArticleController {
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(defaultValue = "latest") String sort) {
         return Result.ok(articleService.pageArticles(pageNum, pageSize, categoryId, tagId, keyword, sort));
+    }
+
+    /**
+     * 热点文章 TopN（公开，按浏览量）
+     */
+    @GetMapping("/hot")
+    public Result<List<ArticleListItemVO>> hot(@RequestParam(defaultValue = "10") int topN) {
+        return Result.ok(articleService.hotArticles(topN));
     }
 
     /**

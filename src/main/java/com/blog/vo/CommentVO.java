@@ -21,6 +21,7 @@ public class CommentVO {
     private Long articleId;
     private Long parentId;
     private String content;
+    private Integer status;
     private LocalDateTime createTime;
     private Long userId;
     private String username;
@@ -29,7 +30,7 @@ public class CommentVO {
 
     public static CommentVO from(Comment comment) {
         return new CommentVO(comment.getId(), comment.getArticleId(), comment.getParentId(),
-                comment.getContent(), comment.getCreateTime(),
+                comment.getContent(), comment.getStatus(), comment.getCreateTime(),
                 comment.getUserId(), null, null, null);
     }
 }

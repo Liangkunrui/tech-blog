@@ -36,8 +36,14 @@ public class NotificationConsumer {
             notificationMapper.insert(notification);
             log.info("站内信已生成: eventId={}, toUserId={}, type={}", message.eventId(), message.toUserId(), message.type());
         } catch (DuplicateKeyException e) {
+            String cause = e.getMostSpecificCause().getMessage();
+            if (cause != null && cause.contains("PRIMARY")) {
+                // 雪花主键冲突属于系统缺陷（ID 生成器并发问题），不应静默丢失消息
+                log.error("通知插入主键冲突（ID 生成器并发缺陷？）: eventId={}, 原因={}", message.eventId(), cause);
+                throw new AmqpRejectAndDontRequeueException("通知主键冲突", e);
+            }
             // event_id 唯一索引冲突 → 重复消息，忽略
-            log.warn("重复通知消息，忽略: eventId={}, 原因={}", message.eventId(), e.getMessage());
+            log.warn("重复通知消息，忽略: eventId={}", message.eventId());
         } catch (Exception e) {
             // 消费失败：重试耗尽后丢弃，避免死循环（listener.retry 已在配置中开启）
             log.error("通知消费失败: eventId={}, 原因={}", message.eventId(), e.getMessage());

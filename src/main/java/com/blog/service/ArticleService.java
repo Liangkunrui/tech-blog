@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.common.BusinessException;
+import com.blog.common.NullCacheMarker;
 import com.blog.common.ResultCode;
 import com.blog.dto.ArticleCreateRequest;
 import com.blog.dto.ArticleUpdateRequest;
@@ -54,8 +55,13 @@ public class ArticleService {
     private static final String DETAIL_KEY_PREFIX = "blog:article:detail:";
     private static final String LIST_KEY_PREFIX = "blog:article:list:";
     private static final String VIEW_KEY_PREFIX = "blog:article:view:";
+    private static final String HOT_KEY_PREFIX = "blog:article:hot:";
+    private static final String LOCK_KEY_PREFIX = "blog:article:lock:";
     private static final Duration DETAIL_CACHE_TTL = Duration.ofMinutes(30);
     private static final Duration LIST_CACHE_TTL = Duration.ofMinutes(5);
+    private static final Duration HOT_CACHE_TTL = Duration.ofMinutes(5);
+    private static final Duration NULL_CACHE_TTL = Duration.ofMinutes(2);
+    private static final Duration LOCK_TTL = Duration.ofSeconds(3);
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
@@ -69,7 +75,14 @@ public class ArticleService {
     /**
      * 列表缓存内容（分页数据快照）
      */
-    public record CachedList(List<ArticleListItemVO> records, long total, long current, long size) {
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class CachedList {
+        private java.util.List<ArticleListItemVO> records;
+        private long total;
+        private long current;
+        private long size;
     }
 
     // ---------------- 查询 ----------------
@@ -120,23 +133,84 @@ public class ArticleService {
 
     /**
      * 文章详情（仅已发布），浏览量 +1（Redis 计数）
+     * 缓存策略：空值缓存防穿透 + 互斥锁防击穿（Cache Aside）
      */
     public ArticleDetailVO getDetail(Long id) {
         String cacheKey = DETAIL_KEY_PREFIX + id;
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-        ArticleDetailVO vo;
-        if (cached instanceof ArticleDetailVO detail) {
-            vo = detail;
-        } else {
-            Article article = articleMapper.selectById(id);
-            if (article == null || !Integer.valueOf(1).equals(article.getStatus())) {
-                throw new BusinessException(ResultCode.NOT_FOUND);
-            }
-            vo = buildDetail(article);
-            redisTemplate.opsForValue().set(cacheKey, vo, DETAIL_CACHE_TTL);
+        // 1. 读缓存：命中直接返回；命中空值标记则视为不存在
+        ArticleDetailVO cached = readCachedDetail(cacheKey);
+        if (cached != null) {
+            incrementView(id);
+            return cached;
         }
+        // 2. 缓存未命中：尝试获取互斥锁，避免热点 Key 失效瞬间的缓存击穿
+        String lockKey = LOCK_KEY_PREFIX + id;
+        if (tryLock(lockKey)) {
+            try {
+                // 双重检查：等锁期间可能已被其他线程重建
+                cached = readCachedDetail(cacheKey);
+                if (cached != null) {
+                    incrementView(id);
+                    return cached;
+                }
+                Article article = articleMapper.selectById(id);
+                if (article == null || !Integer.valueOf(1).equals(article.getStatus())) {
+                    // 空值缓存（短 TTL），防缓存穿透
+                    redisTemplate.opsForValue().set(cacheKey, NullCacheMarker.INSTANCE, NULL_CACHE_TTL);
+                    throw new BusinessException(ResultCode.NOT_FOUND);
+                }
+                ArticleDetailVO vo = buildDetail(article);
+                redisTemplate.opsForValue().set(cacheKey, vo, DETAIL_CACHE_TTL);
+                incrementView(id);
+                return vo;
+            } finally {
+                unlock(lockKey);
+            }
+        }
+        // 3. 未拿到锁：短暂等待后重试读缓存（最多 3 次），仍无则回源查询兜底
+        for (int i = 0; i < 3; i++) {
+            sleep(100);
+            cached = readCachedDetail(cacheKey);
+            if (cached != null) {
+                incrementView(id);
+                return cached;
+            }
+        }
+        Article article = articleMapper.selectById(id);
+        if (article == null || !Integer.valueOf(1).equals(article.getStatus())) {
+            redisTemplate.opsForValue().set(cacheKey, NullCacheMarker.INSTANCE, NULL_CACHE_TTL);
+            throw new BusinessException(ResultCode.NOT_FOUND);
+        }
+        ArticleDetailVO vo = buildDetail(article);
+        redisTemplate.opsForValue().set(cacheKey, vo, DETAIL_CACHE_TTL);
         incrementView(id);
         return vo;
+    }
+
+    /**
+     * 热点文章 TopN（按浏览量，Redis 缓存）
+     */
+    public List<ArticleListItemVO> hotArticles(int topN) {
+        int limit = Math.min(Math.max(topN, 1), 50);
+        String cacheKey = HOT_KEY_PREFIX + limit;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof List<?> list) {
+            return list.stream()
+                    .filter(ArticleListItemVO.class::isInstance)
+                    .map(ArticleListItemVO.class::cast)
+                    .toList();
+        }
+        List<Article> articles = articleMapper.selectList(new LambdaQueryWrapper<Article>()
+                .eq(Article::getStatus, 1)
+                .orderByDesc(Article::getViewCount)
+                .orderByDesc(Article::getId)
+                .last("LIMIT " + limit));
+        List<ArticleListItemVO> records = articles.stream()
+                .map(ArticleListItemVO::from)
+                .toList();
+        fillAuthorAndCategory(records);
+        redisTemplate.opsForValue().set(cacheKey, records, HOT_CACHE_TTL);
+        return records;
     }
 
     // ---------------- 写操作 ----------------
@@ -169,6 +243,7 @@ public class ArticleService {
             notificationService.publishNewArticleToFollowers(userId, article.getId(), article.getTitle());
         }
         evictListCache();
+        evictHotCache();
         return buildDetail(article);
     }
 
@@ -203,6 +278,7 @@ public class ArticleService {
         }
         evictDetailCache(articleId);
         evictListCache();
+        evictHotCache();
         return buildDetail(article);
     }
 
@@ -216,6 +292,7 @@ public class ArticleService {
         unbindAllTags(articleId);
         evictDetailCache(articleId);
         evictListCache();
+        evictHotCache();
     }
 
     // ---------------- 浏览量统计（Redis 计数 + 定时落库） ----------------
@@ -246,6 +323,8 @@ public class ArticleService {
                     .setSql("view_count = view_count + {0}", delta));
             evictDetailCache(articleId);
         }
+        // 浏览量变化影响热点排名
+        evictHotCache();
     }
 
     // ---------------- 私有方法 ----------------
@@ -371,9 +450,44 @@ public class ArticleService {
     }
 
     private Page<ArticleListItemVO> toPage(CachedList cl) {
-        Page<ArticleListItemVO> page = new Page<>(cl.current(), cl.size(), cl.total());
-        page.setRecords(cl.records());
+        Page<ArticleListItemVO> page = new Page<>(cl.getCurrent(), cl.getSize(), cl.getTotal());
+        page.setRecords(cl.getRecords());
         return page;
+    }
+
+    private ArticleDetailVO readCachedDetail(String cacheKey) {
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof ArticleDetailVO vo) {
+            return vo;
+        }
+        // 缓存中存在非详情值（空值标记）→ 视为不存在
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey))) {
+            throw new BusinessException(ResultCode.NOT_FOUND);
+        }
+        return null;
+    }
+
+    private boolean tryLock(String key) {
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_TTL));
+    }
+
+    private void unlock(String key) {
+        stringRedisTemplate.delete(key);
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void evictHotCache() {
+        Set<String> keys = redisTemplate.keys(HOT_KEY_PREFIX + "*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
     }
 
     private String md5(String input) {

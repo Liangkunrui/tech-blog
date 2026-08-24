@@ -51,3 +51,12 @@ mybatis-plus:
 jwt:
   secret: tech-blog-jwt-secret-key-2026-please-change-in-production-0123456789abcdef
   expire-seconds: 604800
+
+# 业务配置
+blog:
+  # 浏览量/点赞量落库间隔（毫秒）
+  view-flush-ms: 300000
+  # 评论审核延时（毫秒），到期自动放行
+  comment-review-delay-ms: 10000
+  # 敏感词（命中进入审核队列）
+  sensitive-words: 广告,赌博,违禁,代开发票

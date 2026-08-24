@@ -171,6 +171,7 @@ CREATE TABLE `follow` (
 DROP TABLE IF EXISTS `notification`;
 CREATE TABLE `notification` (
     `id`          BIGINT       NOT NULL COMMENT '主键',
+    `event_id`    VARCHAR(64)  DEFAULT NULL COMMENT '消息唯一ID（防重复消费）',
     `user_id`     BIGINT       NOT NULL COMMENT '接收者ID',
     `from_user_id` BIGINT      DEFAULT NULL COMMENT '触发者ID（系统通知为空）',
     `type`        TINYINT      NOT NULL COMMENT '类型: 1评论 2点赞 3收藏 4关注 5系统',
@@ -181,5 +182,6 @@ CREATE TABLE `notification` (
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_event_id` (`event_id`),
     KEY `idx_user_read` (`user_id`, `is_read`)
 ) ENGINE = InnoDB COMMENT = '通知表';

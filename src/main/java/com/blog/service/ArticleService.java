@@ -62,6 +62,7 @@ public class ArticleService {
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -162,6 +163,10 @@ public class ArticleService {
         articleMapper.insert(article);
         if (request.getTags() != null) {
             bindTags(article.getId(), request.getTags());
+        }
+        // 发布成功后异步通知作者的粉丝
+        if (Integer.valueOf(1).equals(article.getStatus())) {
+            notificationService.publishNewArticleToFollowers(userId, article.getId(), article.getTitle());
         }
         evictListCache();
         return buildDetail(article);

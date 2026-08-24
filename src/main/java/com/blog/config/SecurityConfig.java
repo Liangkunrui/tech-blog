@@ -2,8 +2,10 @@ package com.blog.config;
 
 import com.blog.common.Result;
 import com.blog.common.ResultCode;
+import com.blog.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -14,20 +16,24 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
 
 /**
- * Spring Security 配置（阶段0基础版，阶段1接入 JWT 过滤器）
+ * Spring Security 配置：无状态 JWT 认证
  *
  * @author Liangkunrui
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -50,7 +56,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) ->
                                 writeJson(response, HttpServletResponse.SC_UNAUTHORIZED, Result.fail(ResultCode.UNAUTHORIZED)))
                         .accessDeniedHandler((request, response, accessDeniedException) ->
-                                writeJson(response, HttpServletResponse.SC_FORBIDDEN, Result.fail(ResultCode.FORBIDDEN))));
+                                writeJson(response, HttpServletResponse.SC_FORBIDDEN, Result.fail(ResultCode.FORBIDDEN))))
+                // JWT 过滤器在用户名密码过滤器之前执行
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

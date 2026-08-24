@@ -6,7 +6,7 @@
 
 - **难度**：★★☆（入门第一个完整项目）
 - **目标**：通过一个完整的博客/社区业务闭环，熟悉主流 Java 后端技术栈的组合用法
-- **当前状态**：🛠 开发中（阶段0 工程搭建已完成）
+- **当前状态**：🛠 开发中（阶段1 用户模块已完成）
 
 ## 技术栈
 
@@ -31,7 +31,7 @@
 | 阶段 | 内容 | 状态 |
 | ---- | ---- | ---- |
 | 阶段 0 | 环境与工程搭建（骨架、统一响应/异常、MyBatis-Plus/Redis/Security 配置、建库建表） | ✅ 完成 |
-| 阶段 1 | 用户模块（JWT + SpringSecurity 注册登录、个人中心） | ⬜ 待开始 |
+| 阶段 1 | 用户模块（JWT + SpringSecurity 注册登录、个人中心） | ✅ 完成 |
 | 阶段 2 | 文章模块（CRUD、Markdown、分类标签、列表/详情缓存） | ⬜ 待开始 |
 | 阶段 3 | 互动模块（评论、点赞、收藏、关注） | ⬜ 待开始 |
 | 阶段 4 | 消息通知（站内信、邮件、RabbitMQ） | ⬜ 待开始 |
@@ -75,12 +75,15 @@ tech-blog
     ├── main/java/com/blog
     │   ├── BlogApplication.java
     │   ├── common/          # 统一响应 Result、状态码、业务异常、全局异常处理
-    │   ├── config/          # Security / MyBatis-Plus / Redis / 字段自动填充
-    │   ├── controller/      # 接口层（HealthController）
-    │   ├── entity/          # 实体（BaseEntity）
-    │   ├── mapper/          # MyBatis-Plus Mapper（阶段1起）
-    │   ├── service/         # 业务层（阶段1起）
-    │   └── dto/ vo/         # （阶段1起）
+    │   ├── config/          # Security / JWT / MyBatis-Plus / Redis / Jackson / 字段自动填充
+    │   ├── controller/      # 接口层（Auth / User / Health）
+    │   ├── dto/             # 请求对象（含参数校验）
+    │   ├── entity/          # 数据库实体（BaseEntity / User / Article / Favorite / Follow）
+    │   ├── mapper/          # MyBatis-Plus Mapper
+    │   ├── security/        # JWT 过滤器、当前登录用户、SecurityUtils
+    │   ├── service/         # 业务层（UserService）
+    │   ├── util/            # 工具（JwtUtil）
+    │   └── vo/              # 视图对象
     ├── main/resources/      # application.yml、application-local.yml、mapper xml
-    └── test/                # 单元测试
+    └── test/                # 单元/集成测试
 ```

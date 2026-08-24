@@ -350,7 +350,10 @@ public class ArticleService {
         stringRedisTemplate.opsForValue().increment(VIEW_KEY_PREFIX + articleId);
     }
 
-    private void evictDetailCache(Long articleId) {
+    /**
+     * 使文章详情缓存失效（供评论/点赞/收藏等计数变化时调用）
+     */
+    public void evictDetailCache(Long articleId) {
         redisTemplate.delete(DETAIL_KEY_PREFIX + articleId);
     }
 

@@ -51,8 +51,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/health").permitAll()
-                        // 游客可浏览：文章列表/详情、分类、标签
-                        .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/categories/**", "/api/tags/**").permitAll()
+                        // 游客可浏览：文章列表/详情、评论列表、分类、标签
+                        // （点赞/收藏/关注的状态接口需要登录，不在此放行）
+                        .requestMatchers(HttpMethod.GET, "/api/articles", "/api/articles/*",
+                                "/api/articles/*/comments", "/api/categories/**", "/api/tags/**").permitAll()
                         .anyRequest().authenticated())
                 // 未认证返回 401、无权限返回 403，均使用统一响应结构
                 .exceptionHandling(ex -> ex

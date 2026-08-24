@@ -91,7 +91,7 @@ public class NotificationService {
                         .collect(Collectors.toMap(User::getId, user -> user));
         return page.convert(notification -> {
             NotificationVO vo = NotificationVO.from(notification);
-            User fromUser = userMap.get(notification.getFromUserId());
+            User fromUser = notification.getFromUserId() != null ? userMap.get(notification.getFromUserId()) : null;
             if (fromUser != null) {
                 vo.setFromUserName(fromUser.getNickname() != null ? fromUser.getNickname() : fromUser.getUsername());
             }

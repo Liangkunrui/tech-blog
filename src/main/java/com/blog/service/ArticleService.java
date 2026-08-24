@@ -383,11 +383,11 @@ public class ArticleService {
         Map<Long, Category> categoryMap = categoryIds.isEmpty() ? Map.of()
                 : categoryMapper.selectBatchIds(categoryIds).stream().collect(Collectors.toMap(Category::getId, c -> c));
         for (ArticleListItemVO vo : records) {
-            User author = userMap.get(vo.getAuthorId());
+            User author = vo.getAuthorId() != null ? userMap.get(vo.getAuthorId()) : null;
             if (author != null) {
                 vo.setAuthorName(StringUtils.hasText(author.getNickname()) ? author.getNickname() : author.getUsername());
             }
-            Category category = categoryMap.get(vo.getCategoryId());
+            Category category = vo.getCategoryId() != null ? categoryMap.get(vo.getCategoryId()) : null;
             if (category != null) {
                 vo.setCategoryName(category.getName());
             }

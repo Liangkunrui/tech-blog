@@ -25,6 +25,7 @@ import com.blog.vo.CategoryVO;
 import com.blog.vo.TagVO;
 import com.blog.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
  *
  * @author Liangkunrui
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleService {
@@ -93,7 +95,7 @@ public class ArticleService {
     public IPage<ArticleListItemVO> pageArticles(long pageNum, long pageSize, Long categoryId,
                                                  Long tagId, String keyword, String sort) {
         String cacheKey = LIST_KEY_PREFIX + md5(categoryId + "|" + tagId + "|" + keyword + "|" + sort + "|" + pageNum + "|" + pageSize);
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        Object cached = readCacheSafe(cacheKey);
         if (cached instanceof CachedList cl) {
             return toPage(cl);
         }
@@ -193,7 +195,7 @@ public class ArticleService {
     public List<ArticleListItemVO> hotArticles(int topN) {
         int limit = Math.min(Math.max(topN, 1), 50);
         String cacheKey = HOT_KEY_PREFIX + limit;
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        Object cached = readCacheSafe(cacheKey);
         if (cached instanceof List<?> list) {
             return list.stream()
                     .filter(ArticleListItemVO.class::isInstance)
@@ -455,8 +457,21 @@ public class ArticleService {
         return page;
     }
 
+    /**
+     * 安全读取缓存：反序列化失败（如旧格式脏数据）时清除该 key 并按未命中处理，避免 500
+     */
+    private Object readCacheSafe(String cacheKey) {
+        try {
+            return redisTemplate.opsForValue().get(cacheKey);
+        } catch (Exception e) {
+            log.warn("缓存读取失败，清除脏数据: key={}, 原因={}", cacheKey, e.getMessage());
+            redisTemplate.delete(cacheKey);
+            return null;
+        }
+    }
+
     private ArticleDetailVO readCachedDetail(String cacheKey) {
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        Object cached = readCacheSafe(cacheKey);
         if (cached instanceof ArticleDetailVO vo) {
             return vo;
         }

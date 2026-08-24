@@ -109,26 +109,38 @@ class NotificationFlowTest {
                         .eq(Notification::getUserId, authorId)) >= 3);
 
         // 通知列表 + 未读数
-        mockMvc.perform(get("/api/notifications")
-                        .header("Authorization", "Bearer " + tokenA))
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.total").value(org.hamcrest.Matchers.greaterThanOrEqualTo(3)));
-        mockMvc.perform(get("/api/notifications/unread-count")
-                        .header("Authorization", "Bearer " + tokenA))
-                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.greaterThanOrEqualTo(3)));
-
-        // 标记一条已读 → 未读数减少
         MvcResult listResult = mockMvc.perform(get("/api/notifications")
                         .header("Authorization", "Bearer " + tokenA))
+                .andExpect(jsonPath("$.code").value(200))
                 .andReturn();
-        long firstId = objectMapper.readTree(listResult.getResponse().getContentAsString())
-                .path("data").path("records").get(0).path("id").asLong();
+        org.junit.jupiter.api.Assertions.assertTrue(
+                objectMapper.readTree(listResult.getResponse().getContentAsString())
+                        .path("data").path("total").asInt() >= 3);
+        MvcResult unreadResult = mockMvc.perform(get("/api/notifications/unread-count")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(jsonPath("$.code").value(200))
+                .andReturn();
+        org.junit.jupiter.api.Assertions.assertTrue(
+                objectMapper.readTree(unreadResult.getResponse().getContentAsString())
+                        .path("data").asInt() >= 3);
+
+        // 标记一条已读 → 未读数减少
+        MvcResult firstList = mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(jsonPath("$.code").value(200))
+                .andReturn();
+        String firstId = objectMapper.readTree(firstList.getResponse().getContentAsString())
+                .path("data").path("records").get(0).path("id").asText();
         mockMvc.perform(put("/api/notifications/" + firstId + "/read")
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(jsonPath("$.code").value(200));
-        mockMvc.perform(get("/api/notifications/unread-count")
+        MvcResult unreadAfterRead = mockMvc.perform(get("/api/notifications/unread-count")
                         .header("Authorization", "Bearer " + tokenA))
-                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
+                .andExpect(jsonPath("$.code").value(200))
+                .andReturn();
+        org.junit.jupiter.api.Assertions.assertTrue(
+                objectMapper.readTree(unreadAfterRead.getResponse().getContentAsString())
+                        .path("data").asInt() >= 2);
 
         // 全部已读 → 未读数 0
         mockMvc.perform(put("/api/notifications/read-all")
@@ -136,7 +148,7 @@ class NotificationFlowTest {
                 .andExpect(jsonPath("$.code").value(200));
         mockMvc.perform(get("/api/notifications/unread-count")
                         .header("Authorization", "Bearer " + tokenA))
-                .andExpect(jsonPath("$.data").value(0));
+                .andExpect(jsonPath("$.data").value("0"));
 
         // 粉丝广播：B 已关注 A，A 再发一篇 → B 收到系统通知
         mockMvc.perform(post("/api/articles")

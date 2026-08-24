@@ -116,8 +116,8 @@ class InteractionFlowTest {
                 .andExpect(jsonPath("$.data").value(true));
         mockMvc.perform(get("/api/users/me/favorites")
                         .header("Authorization", "Bearer " + tokenB))
-                .andExpect(jsonPath("$.data.total").value(1))
-                .andExpect(jsonPath("$.data.records[0].articleId").value(articleId));
+                .andExpect(jsonPath("$.data.total").value("1"))
+                .andExpect(jsonPath("$.data.records[0].articleId").value(String.valueOf(articleId)));
         mockMvc.perform(delete("/api/articles/" + articleId + "/favorite")
                         .header("Authorization", "Bearer " + tokenB))
                 .andExpect(jsonPath("$.code").value(200));
@@ -140,8 +140,8 @@ class InteractionFlowTest {
                 .andExpect(jsonPath("$.data").value(true));
         mockMvc.perform(get("/api/users/me/following")
                         .header("Authorization", "Bearer " + tokenB))
-                .andExpect(jsonPath("$.data.total").value(1))
-                .andExpect(jsonPath("$.data.records[0].userId").value(authorId));
+                .andExpect(jsonPath("$.data.total").value("1"))
+                .andExpect(jsonPath("$.data.records[0].userId").value(String.valueOf(authorId)));
         mockMvc.perform(get("/api/users/me/followers")
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(jsonPath("$.data.total").value(1));

@@ -79,13 +79,13 @@ class CommentReviewTest {
                         .content(objectMapper.writeValueAsBytes(Map.of("content", "这里有广告信息"))))
                 .andExpect(jsonPath("$.data.status").value(0));
         mockMvc.perform(get("/api/articles/" + articleId + "/comments"))
-                .andExpect(jsonPath("$.data.total").value(1));
+                .andExpect(jsonPath("$.data.total").value("1"));
 
         // 3. 等待延时队列到期（默认10s + 余量），评论被自动放行 → 列表 total=2、评论数联动
         Awaitility.await().atMost(25, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> mockMvc.perform(get("/api/articles/" + articleId + "/comments"))
-                        .andExpect(jsonPath("$.data.total").value(2))
+                        .andExpect(jsonPath("$.data.total").value("2"))
                         .andExpect(jsonPath("$.data.records[1].content").value("这里有广告信息")));
         mockMvc.perform(get("/api/articles/" + articleId))
                 .andExpect(jsonPath("$.data.commentCount").value(2));

@@ -1,0 +1,7 @@
+# 前端依赖与构建产物
+node_modules/
+dist/
+*.local
+
+# 日志
+*.log

@@ -59,6 +59,24 @@ curl http://localhost:8080/api/health
 
 > 本地敏感配置（数据库密码等）放在 `application-local.yml`（已被 `.gitignore` 忽略），不会提交到仓库。
 
+### 前端（Vue3）
+
+前置要求：Node.js 18+（开发时经 Vite 代理访问后端，无需处理跨域）。
+
+```bash
+# 1. 安装依赖
+cd web
+npm install
+
+# 2. 启动开发服务器（http://localhost:5173，/api 自动代理到 8080）
+npm run dev
+
+# 3. 生产构建
+npm run build
+```
+
+> 前端需求设计与开发计划见 [web/docs/需求设计.md](web/docs/需求设计.md) 与 [web/docs/开发计划.md](web/docs/开发计划.md)
+
 ## 文档
 
 - [需求文档](docs/需求文档.md)
@@ -68,9 +86,12 @@ curl http://localhost:8080/api/health
 
 ```
 tech-blog
-├── docs/                    # 需求文档、开发计划
+├── docs/                    # 后端需求文档、开发计划
 ├── sql/schema.sql           # 建库建表脚本（tech_blog 库，10 张核心表）
 ├── pom.xml
+├── web/                     # 前端（Vue3 + Vite + TS，前后端分离）
+│   ├── docs/                # 前端需求设计、开发计划
+│   └── src/                 # api / stores / router / layouts / views
 └── src
     ├── main/java/com/blog
     │   ├── BlogApplication.java

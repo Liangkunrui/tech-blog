@@ -36,11 +36,11 @@ async function submit() {
       <h2>登录</h2>
       <div class="form-group">
         <label>用户名</label>
-        <input v-model="username" class="form-input" placeholder="请输入用户名" />
+        <input v-model="username" class="form-input" autocomplete="off" placeholder="请输入用户名" />
       </div>
       <div class="form-group">
         <label>密码</label>
-        <input v-model="password" type="password" class="form-input" placeholder="请输入密码" @keyup.enter="submit" />
+        <input v-model="password" type="password" class="form-input" autocomplete="new-password" placeholder="请输入密码" @keyup.enter="submit" />
       </div>
       <button class="btn btn-primary auth-btn" :disabled="submitting" @click="submit">
         {{ submitting ? '登录中...' : '登录' }}

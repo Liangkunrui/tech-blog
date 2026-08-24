@@ -12,7 +12,7 @@ async function loadUnread() {
   if (!userStore.isLoggedIn) return
   try {
     const res = await unreadCount()
-    unread.value = res.data
+    unread.value = Number(res.data)
   } catch {
     unread.value = 0
   }

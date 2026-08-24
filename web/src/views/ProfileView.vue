@@ -11,9 +11,9 @@ const tab = ref<'articles' | 'favorites' | 'following' | 'followers' | 'profile'
 
 // 列表数据
 const articles = ref<ArticleListItem[]>([])
-const favorites = ref<{ articleId: number; articleTitle: string; createTime: string }[]>([])
-const following = ref<{ userId: number; username: string; nickname: string; avatar: string | null }[]>([])
-const followers = ref<{ userId: number; username: string; nickname: string; avatar: string | null }[]>([])
+const favorites = ref<{ articleId: string; articleTitle: string; createTime: string }[]>([])
+const following = ref<{ userId: string; username: string; nickname: string; avatar: string | null }[]>([])
+const followers = ref<{ userId: string; username: string; nickname: string; avatar: string | null }[]>([])
 const loading = ref(false)
 
 // 资料表单

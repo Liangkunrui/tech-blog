@@ -23,21 +23,21 @@ export function myArticles(pageNum = 1, pageSize = 10) {
 }
 
 export function myFavorites(pageNum = 1, pageSize = 10) {
-  return request.get<unknown, Result<Page<{ articleId: number; articleTitle: string; createTime: string }>>>(
+  return request.get<unknown, Result<Page<{ articleId: string; articleTitle: string; createTime: string }>>>(
     '/users/me/favorites',
     { params: { pageNum, pageSize } },
   )
 }
 
 export function myFollowing(pageNum = 1, pageSize = 10) {
-  return request.get<unknown, Result<Page<{ userId: number; username: string; nickname: string; avatar: string | null }>>>(
+  return request.get<unknown, Result<Page<{ userId: string; username: string; nickname: string; avatar: string | null }>>>(
     '/users/me/following',
     { params: { pageNum, pageSize } },
   )
 }
 
 export function myFollowers(pageNum = 1, pageSize = 10) {
-  return request.get<unknown, Result<Page<{ userId: number; username: string; nickname: string; avatar: string | null }>>>(
+  return request.get<unknown, Result<Page<{ userId: string; username: string; nickname: string; avatar: string | null }>>>(
     '/users/me/followers',
     { params: { pageNum, pageSize } },
   )

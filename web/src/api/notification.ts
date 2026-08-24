@@ -11,7 +11,7 @@ export function unreadCount() {
   return request.get<unknown, Result<number>>('/notifications/unread-count')
 }
 
-export function markRead(id: number) {
+export function markRead(id: string) {
   return request.put<unknown, Result<null>>(`/notifications/${id}/read`)
 }
 

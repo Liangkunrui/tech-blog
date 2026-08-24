@@ -15,7 +15,7 @@ const isEdit = computed(() => !!editId.value)
 const title = ref('')
 const content = ref('')
 const summary = ref('')
-const categoryId = ref<number | undefined>()
+const categoryId = ref<string | undefined>()
 const tagsInput = ref('')
 const categories = ref<CategoryVO[]>([])
 const preview = ref(false)
@@ -68,7 +68,7 @@ async function submit() {
     title: title.value.trim(),
     content: content.value,
     summary: summary.value.trim() || undefined,
-    categoryId: categoryId.value,
+    categoryId: categoryId.value ? Number(categoryId.value) : undefined,
     tags: parseTags(),
   }
   try {

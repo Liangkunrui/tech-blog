@@ -45,15 +45,15 @@ async function submit() {
       <h2>注册</h2>
       <div class="form-group">
         <label>用户名（4-20位）</label>
-        <input v-model="username" class="form-input" placeholder="请输入用户名" />
+        <input v-model="username" class="form-input" autocomplete="off" placeholder="请输入用户名" />
       </div>
       <div class="form-group">
         <label>密码（6-32位）</label>
-        <input v-model="password" type="password" class="form-input" placeholder="请输入密码" />
+        <input v-model="password" type="password" class="form-input" autocomplete="new-password" placeholder="请输入密码" />
       </div>
       <div class="form-group">
         <label>确认密码</label>
-        <input v-model="confirmPassword" type="password" class="form-input" placeholder="再次输入密码" />
+        <input v-model="confirmPassword" type="password" class="form-input" autocomplete="new-password" placeholder="再次输入密码" />
       </div>
       <div class="form-group">
         <label>昵称（可选）</label>

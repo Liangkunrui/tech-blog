@@ -2,17 +2,18 @@
 import { onMounted, ref } from 'vue'
 import { listArticles, hotArticles, listCategories, listTags } from '@/api/article'
 import type { ArticleListItem, CategoryVO, TagVO } from '@/api/types'
+import Pagination from '@/components/Pagination.vue'
 
 const articles = ref<ArticleListItem[]>([])
 const hot = ref<ArticleListItem[]>([])
 const categories = ref<CategoryVO[]>([])
 const tags = ref<TagVO[]>([])
-const total = ref(0)
+const total = ref('0')
 const pageNum = ref(1)
 const pageSize = 10
 const keyword = ref('')
-const categoryId = ref<number | undefined>()
-const tagId = ref<number | undefined>()
+const categoryId = ref<string | undefined>()
+const tagId = ref<string | undefined>()
 const sort = ref('latest')
 const loading = ref(false)
 
@@ -22,8 +23,8 @@ async function loadArticles() {
     const res = await listArticles({
       pageNum: pageNum.value,
       pageSize,
-      categoryId: categoryId.value,
-      tagId: tagId.value,
+      categoryId: categoryId.value ? Number(categoryId.value) : undefined,
+      tagId: tagId.value ? Number(tagId.value) : undefined,
       keyword: keyword.value || undefined,
       sort: sort.value,
     })
@@ -126,11 +127,7 @@ onMounted(() => {
     </section>
 
     <!-- 分页 -->
-    <div v-if="total > pageSize" class="pager">
-      <button class="btn btn-outline" :disabled="pageNum <= 1" @click="changePage(pageNum - 1)">上一页</button>
-      <span class="muted">{{ pageNum }} / {{ Math.ceil(total / pageSize) }}</span>
-      <button class="btn btn-outline" :disabled="pageNum >= Math.ceil(total / pageSize)" @click="changePage(pageNum + 1)">下一页</button>
-    </div>
+    <Pagination :page="pageNum" :total="Number(total)" :page-size="pageSize" @change="changePage" />
   </div>
 </template>
 
@@ -242,13 +239,5 @@ onMounted(() => {
 .empty {
   text-align: center;
   padding: 40px 0;
-}
-
-.pager {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 20px;
 }
 </style>

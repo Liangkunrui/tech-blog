@@ -5,16 +5,20 @@ export interface Result<T = unknown> {
   data: T
 }
 
+/**
+ * 分页对象：id/数值字段在后端统一序列化为字符串（雪花 ID 超 JS 安全整数范围），
+ * 使用 Number() 转换后再计算。
+ */
 export interface Page<T> {
   records: T[]
-  total: number
-  size: number
-  current: number
-  pages: number
+  total: string
+  size: string
+  current: string
+  pages: string
 }
 
 export interface UserVO {
-  id: number
+  id: string
   username: string
   nickname: string | null
   avatar: string | null
@@ -29,20 +33,20 @@ export interface LoginVO {
 }
 
 export interface CategoryVO {
-  id: number
+  id: string
   name: string
   sort: number
-  articleCount: number
+  articleCount: string
 }
 
 export interface TagVO {
-  id: number
+  id: string
   name: string
-  articleCount: number
+  articleCount: string
 }
 
 export interface ArticleListItem {
-  id: number
+  id: string
   title: string
   summary: string | null
   status: number
@@ -50,14 +54,14 @@ export interface ArticleListItem {
   likeCount: number
   commentCount: number
   createTime: string
-  authorId: number
+  authorId: string
   authorName: string | null
-  categoryId: number | null
+  categoryId: string | null
   categoryName: string | null
 }
 
 export interface ArticleDetail {
-  id: number
+  id: string
   title: string
   content: string
   summary: string | null
@@ -74,24 +78,24 @@ export interface ArticleDetail {
 }
 
 export interface CommentVO {
-  id: number
-  articleId: number
-  parentId: number
+  id: string
+  articleId: string
+  parentId: string
   content: string
   status: number
   createTime: string
-  userId: number
+  userId: string
   username: string
   nickname: string | null
   avatar: string | null
 }
 
 export interface NotificationVO {
-  id: number
+  id: string
   type: number
-  fromUserId: number | null
+  fromUserId: string | null
   fromUserName: string | null
-  targetId: number | null
+  targetId: string | null
   content: string
   isRead: number
   createTime: string

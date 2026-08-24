@@ -2,9 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { listNotifications, markRead, markAllRead } from '@/api/notification'
 import type { NotificationVO } from '@/api/types'
+import Pagination from '@/components/Pagination.vue'
 
 const notifications = ref<NotificationVO[]>([])
-const total = ref(0)
+const total = ref('0')
 const pageNum = ref(1)
 const pageSize = 20
 const loading = ref(false)
@@ -37,6 +38,11 @@ async function readOne(n: NotificationVO) {
 async function readAll() {
   await markAllRead()
   notifications.value.forEach((n) => (n.isRead = 1))
+}
+
+function changePage(p: number) {
+  pageNum.value = p
+  load()
 }
 
 function fmtTime(s: string) {
@@ -72,11 +78,7 @@ onMounted(load)
       <p v-if="!notifications.length" class="muted empty">暂无通知</p>
     </div>
 
-    <div v-if="total > pageSize" class="pager">
-      <button class="btn btn-outline" :disabled="pageNum <= 1" @click="pageNum--; load()">上一页</button>
-      <span class="muted">{{ pageNum }} / {{ Math.ceil(total / pageSize) }}</span>
-      <button class="btn btn-outline" :disabled="pageNum >= Math.ceil(total / pageSize)" @click="pageNum++; load()">下一页</button>
-    </div>
+    <Pagination :page="pageNum" :total="Number(total)" :page-size="pageSize" @change="changePage" />
   </div>
 </template>
 
@@ -131,13 +133,5 @@ onMounted(load)
 .empty {
   padding: 24px 0;
   text-align: center;
-}
-
-.pager {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 16px;
 }
 </style>

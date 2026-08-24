@@ -44,7 +44,7 @@ async function load() {
 async function loadComments() {
   const res = await listComments(route.params.id as string)
   comments.value = res.data.records
-  commentTotal.value = res.data.total
+  commentTotal.value = Number(res.data.total)
 }
 
 async function loadStatus() {

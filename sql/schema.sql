@@ -95,6 +95,7 @@ CREATE TABLE `article_tag` (
     `article_id`  BIGINT   NOT NULL COMMENT '文章ID',
     `tag_id`      BIGINT   NOT NULL COMMENT '标签ID',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_article_tag` (`article_id`, `tag_id`),
     KEY `idx_tag_id` (`tag_id`)
@@ -128,6 +129,7 @@ CREATE TABLE `article_like` (
     `article_id`  BIGINT   NOT NULL COMMENT '文章ID',
     `user_id`     BIGINT   NOT NULL COMMENT '点赞用户ID',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_article_user` (`article_id`, `user_id`),
     KEY `idx_user_id` (`user_id`)

@@ -47,6 +47,11 @@ export function listCategories() {
   return request.get<unknown, Result<CategoryVO[]>>('/categories')
 }
 
+/** 创建分类（重名时后端返回 400"分类已存在"） */
+export function createCategory(name: string, sort = 0) {
+  return request.post<unknown, Result<CategoryVO>>('/categories', null, { params: { name, sort } })
+}
+
 export function listTags() {
   return request.get<unknown, Result<TagVO[]>>('/tags')
 }

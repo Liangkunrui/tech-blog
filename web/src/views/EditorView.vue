@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { createArticle, updateArticle, getArticle, listCategories } from '@/api/article'
+import { createArticle, updateArticle, getArticle, listCategories, createCategory } from '@/api/article'
 import { renderMarkdown } from '@/utils/markdown'
 import { toast } from '@/utils/message'
 import type { CategoryVO } from '@/api/types'
@@ -18,6 +18,8 @@ const summary = ref('')
 const categoryId = ref<string | undefined>()
 const tagsInput = ref('')
 const categories = ref<CategoryVO[]>([])
+const newCategoryName = ref('')
+const creatingCategory = ref(false)
 const preview = ref(false)
 const submitting = ref(false)
 const loading = ref(false)
@@ -35,6 +37,33 @@ function parseTags(): string[] {
 async function loadCategories() {
   const res = await listCategories()
   categories.value = res.data
+}
+
+/** 新建分类：创建成功后选中；重名时刷新列表并选中同名分类 */
+async function createNewCategory() {
+  const name = newCategoryName.value.trim()
+  if (!name) {
+    toast('请输入分类名', 'error')
+    return
+  }
+  creatingCategory.value = true
+  try {
+    const res = await createCategory(name)
+    toast('分类已创建')
+    newCategoryName.value = ''
+    await loadCategories()
+    categoryId.value = res.data.id
+  } catch {
+    // 已存在（后端返回 400"分类已存在"）：刷新列表并选中同名分类
+    await loadCategories()
+    const existed = categories.value.find((c) => c.name === name)
+    if (existed) {
+      categoryId.value = existed.id
+      toast('分类已存在，已为你选中')
+    }
+  } finally {
+    creatingCategory.value = false
+  }
 }
 
 async function loadArticle() {
@@ -107,6 +136,18 @@ onMounted(() => {
               <option :value="undefined">不选择</option>
               <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
+            <div class="category-create">
+              <input
+                v-model="newCategoryName"
+                class="form-input"
+                maxlength="50"
+                placeholder="新分类名"
+                @keyup.enter="createNewCategory"
+              />
+              <button class="btn btn-outline" :disabled="creatingCategory" @click="createNewCategory">
+                {{ creatingCategory ? '创建中...' : '新建' }}
+              </button>
+            </div>
           </div>
           <div class="half">
             <label>标签（逗号分隔）</label>
@@ -147,6 +188,20 @@ onMounted(() => {
 
 .half {
   flex: 1;
+}
+
+.category-create {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.category-create .form-input {
+  flex: 1;
+}
+
+.category-create .btn {
+  flex-shrink: 0;
 }
 
 .editor-toolbar {
